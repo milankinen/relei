@@ -1,4 +1,4 @@
-import {RelayQL, setEndpoint, query, subscribe} from "../../../src/main"
+import {RelayQL, setEndpoint, query, observe} from "../../../src/main"
 
 setEndpoint("/api/graphql")
 
@@ -19,13 +19,13 @@ const factionsByNames =
   `)
 
 
-const subscribeToEmpireAndRebels =
-  subscribe(factionsByNames({names: ["empire", "rebels"]}), {})
+const observeEmpireAndRebels =
+  observe(factionsByNames({names: ["empire", "rebels"]}), {})
 
 
 console.log("subscribe to id & name")
 var unsub =
-  subscribeToEmpireAndRebels(fragment, (value) => {
+  observeEmpireAndRebels(fragment, (value) => {
     console.log("got value", value)
     window.__results = value
     unsub()

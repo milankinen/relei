@@ -49,7 +49,7 @@ export const query = curry((q, variables) => {
   }
 })
 
-export const subscribe = curry((q, opts, fragment, onValue) => {
+export const observe = curry((q, opts, fragment, onValue) => {
   const {root, base: {name}, variables} = q(fragment)
   const options = opts || {}
 
