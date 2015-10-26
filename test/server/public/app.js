@@ -1,32 +1,66 @@
-import {RelayQL, setEndpoint, query, observe} from "../../../src/main"
+import {RelayQL, setEndpoint, query, observe, mutate} from "../../../src/main"
 
 setEndpoint("/api/graphql")
 
-
 const fragment =
   RelayQL`
-    fragment on Faction @relay(plural: true) {
-      id,
-      name
+  fragment on User {
+    id,
+    todos(first: 100) {
+      edges {
+        node {
+          id,
+          text
+        }
+      }
     }
-  `
+  }`
 
-const factionsByNames =
-  query(RelayQL`
-    query FactionsByName {
-      factions(names: $names)
-    }
-  `)
+const viewersTodos =
+  query(RelayQL`query ViewerTodos { viewer }`, {}, {})
+
+const addTodo = mutate({
+  mutation: RelayQL`mutation { addTodo }`,
+  fatQuery: RelayQL`
+      fragment on AddTodoPayload {
+        todoEdge,
+        viewer {
+          todos,
+          totalCount,
+        },
+      }`,
+  configs: ({viewerId}) => (
+    [{
+      type: "RANGE_ADD",
+      parentName: "viewer",
+      parentID: viewerId,
+      connectionName: "todos",
+      edgeName: "todoEdge",
+      rangeBehaviors: {
+        "": "append",
+        "status(any)": "append",
+        "status(active)": "append",
+        "status(completed)": null
+      }
+    }]
+  )
+})
 
 
-const observeEmpireAndRebels =
-  observe(factionsByNames({names: ["empire", "rebels"]}), {})
+const observeTodosWith = observe(viewersTodos, {forceFetch: false})
+
+let calls = 0
+window._todos = []
+
+console.log("observe")
+observeTodosWith(fragment, (value) => {
+  const todos = value.todos.edges.map(t => t.node)
+  console.log("got todos", todos)
+  window._todos[calls++] = todos
+})
 
 
-console.log("subscribe to id & name")
-var unsub =
-  observeEmpireAndRebels(fragment, (value) => {
-    console.log("got value", value)
-    window.__results = value
-    unsub()
-  })
+setTimeout(() => {
+  console.log("add new todo")
+  addTodo({viewerId: "VXNlcjptZQ=="}, {text: "tsers!"})
+}, 1000)

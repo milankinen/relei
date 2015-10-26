@@ -10,112 +10,89 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/**
- * This defines a basic set of data for our Star Wars Schema.
- *
- * This data is hard coded for the sake of the demo, but you could imagine
- * fetching this data from a backend service rather than from hardcoded
- * JSON objects in a more complex demo.
- */
+export class Todo extends Object {}
+export class User extends Object {}
 
-var xwing = {
-  id: '1',
-  name: 'X-Wing',
+// Mock authenticated ID
+const VIEWER_ID = 'me';
+
+// Mock user data
+var viewer = new User();
+viewer.id = VIEWER_ID;
+var usersById = {
+  [VIEWER_ID]: viewer
 };
 
-var ywing = {
-  id: '2',
-  name: 'Y-Wing',
+// Mock todo data
+var todosById = {};
+var todoIdsByUser = {
+  [VIEWER_ID]: []
 };
+var nextTodoId = 0;
+addTodo('Taste JavaScript', true);
+addTodo('Buy a unicorn', false);
 
-var awing = {
-  id: '3',
-  name: 'A-Wing',
-};
+export function addTodo(text, complete) {
+  var todo = new Todo();
+  todo.complete = !!complete;
+  todo.id = `${nextTodoId++}`;
+  todo.text = text;
+  todosById[todo.id] = todo;
+  todoIdsByUser[VIEWER_ID].push(todo.id);
+  return todo.id;
+}
 
-// Yeah, technically it's Corellian. But it flew in the service of the rebels,
-// so for the purposes of this demo it's a rebel ship.
-var falcon = {
-  id: '4',
-  name: 'Millenium Falcon',
-};
+export function changeTodoStatus(id, complete) {
+  var todo = getTodo(id);
+  todo.complete = complete;
+}
 
-var homeOne = {
-  id: '5',
-  name: 'Home One',
-};
+export function getTodo(id) {
+  return todosById[id];
+}
 
-var tieFighter = {
-  id: '6',
-  name: 'TIE Fighter',
-};
-
-var tieInterceptor = {
-  id: '7',
-  name: 'TIE Interceptor',
-};
-
-var executor = {
-  id: '8',
-  name: 'Executor',
-};
-
-var rebels = {
-  id: '1',
-  name: 'Alliance to Restore the Republic',
-  ships: ['1', '2', '3', '4', '5']
-};
-
-var empire = {
-  id: '2',
-  name: 'Galactic Empire',
-  ships: ['6', '7', '8']
-};
-
-var data = {
-  Faction: {
-    1: rebels,
-    2: empire
-  },
-  Ship: {
-    1: xwing,
-    2: ywing,
-    3: awing,
-    4: falcon,
-    5: homeOne,
-    6: tieFighter,
-    7: tieInterceptor,
-    8: executor
+export function getTodos(status = 'any') {
+  var todos = todoIdsByUser[VIEWER_ID].map(id => todosById[id]);
+  if (status === 'any') {
+    return todos;
   }
-};
-
-var nextShip = 9;
-export function createShip(shipName, factionId) {
-  var newShip = {
-    id: '' + (nextShip++),
-    name: shipName
-  };
-  data.Ship[newShip.id] = newShip;
-  data.Faction[factionId].ships.push(newShip.id);
-  return newShip;
+  return todos.filter(todo => todo.complete === (status === 'completed'));
 }
 
-export function getShip(id) {
-  return data.Ship[id];
+export function getUser(id) {
+  return usersById[id];
 }
 
-export function getFaction(id) {
-  return data.Faction[id];
+export function getViewer() {
+  return getUser(VIEWER_ID);
 }
 
-export function getFactions(names) {
-  return names.map(name => {
-    if (name === 'empire') {
-      return empire;
+export function markAllTodos(complete) {
+  var changedTodos = [];
+  getTodos().forEach(todo => {
+    if (todo.complete !== complete) {
+      todo.complete = complete;
+      changedTodos.push(todo);
     }
-    if (name === 'rebels') {
-      return rebels;
-    }
-    return null;
   });
+  return changedTodos.map(todo => todo.id);
+}
+
+export function removeTodo(id) {
+  var todoIndex = todoIdsByUser[VIEWER_ID].indexOf(id);
+  if (todoIndex !== -1) {
+    todoIdsByUser[VIEWER_ID].splice(todoIndex, 1);
+  }
+  delete todosById[id];
+}
+
+export function removeCompletedTodos() {
+  var todosToRemove = getTodos().filter(todo => todo.complete);
+  todosToRemove.forEach(todo => removeTodo(todo.id));
+  return todosToRemove.map(todo => todo.id);
+}
+
+export function renameTodo(id, text) {
+  var todo = getTodo(id);
+  todo.text = text;
 }

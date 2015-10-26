@@ -11,7 +11,9 @@
  */
 
 import {
+  GraphQLBoolean,
   GraphQLID,
+  GraphQLInt,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
@@ -23,281 +25,257 @@ import {
   connectionArgs,
   connectionDefinitions,
   connectionFromArray,
+  cursorForObjectInConnection,
   fromGlobalId,
   globalIdField,
   mutationWithClientMutationId,
   nodeDefinitions,
+  toGlobalId,
 } from 'graphql-relay';
 
 import {
-  getFaction,
-  getShip,
-  getFactions,
-  createShip,
+  Todo,
+  User,
+  addTodo,
+  changeTodoStatus,
+  getTodo,
+  getTodos,
+  getUser,
+  getViewer,
+  markAllTodos,
+  removeCompletedTodos,
+  removeTodo,
+  renameTodo,
 } from './database';
 
-/**
- * This is a basic end-to-end test, designed to demonstrate the various
- * capabilities of a Relay-compliant GraphQL server.
- *
- * It is recommended that readers of this test be familiar with
- * the end-to-end test in GraphQL.js first, as this test skips
- * over the basics covered there in favor of illustrating the
- * key aspects of the Relay spec that this test is designed to illustrate.
- *
- * We will create a GraphQL schema that describes the major
- * factions and ships in the original Star Wars trilogy.
- *
- * NOTE: This may contain spoilers for the original Star
- * Wars trilogy.
- */
-
-/**
- * Using our shorthand to describe type systems,
- * the type system for our example will be the following:
- *
- * interface Node {
- *   id: ID!
- * }
- *
- * type Faction : Node {
- *   id: ID!
- *   name: String
- *   ships: ShipConnection
- * }
- *
- * type Ship : Node {
- *   id: ID!
- *   name: String
- * }
- *
- * type ShipConnection {
- *   edges: [ShipEdge]
- *   pageInfo: PageInfo!
- * }
- *
- * type ShipEdge {
- *   cursor: String!
- *   node: Ship
- * }
- *
- * type PageInfo {
- *   hasNextPage: Boolean!
- *   hasPreviousPage: Boolean!
- *   startCursor: String
- *   endCursor: String
- * }
- *
- * type Query {
- *   rebels: Faction
- *   empire: Faction
- *   node(id: ID!): Node
- * }
- *
- * input IntroduceShipInput {
- *   clientMutationId: string!
- *   shipName: string!
- *   factionId: ID!
- * }
- *
- * input IntroduceShipPayload {
- *   clientMutationId: string!
- *   ship: Ship
- *   faction: Faction
- * }
- *
- * type Mutation {
- *   introduceShip(input IntroduceShipInput!): IntroduceShipPayload
- * }
- */
-
-/**
- * We get the node interface and field from the Relay library.
- *
- * The first method defines the way we resolve an ID to its object.
- * The second defines the way we resolve a node object to its GraphQL type.
- */
 var {nodeInterface, nodeField} = nodeDefinitions(
   (globalId) => {
     var {type, id} = fromGlobalId(globalId);
-    if (type === 'Faction') {
-      return getFaction(id);
-    } else if (type === 'Ship') {
-      return getShip(id);
-    } else {
-      return null;
+    if (type === 'Todo') {
+      return getTodo(id);
+    } else if (type === 'User') {
+      return getUser(id);
     }
+    return null;
   },
   (obj) => {
-    return obj.ships ? factionType : shipType;
+    if (obj instanceof Todo) {
+      return GraphQLTodo;
+    } else if (obj instanceof User) {
+      return GraphQLUser;
+    }
+    return null;
   }
 );
 
-/**
- * We define our basic ship type.
- *
- * This implements the following type system shorthand:
- *   type Ship : Node {
- *     id: String!
- *     name: String
- *   }
- */
-var shipType = new GraphQLObjectType({
-  name: 'Ship',
-  description: 'A ship in the Star Wars saga',
-  fields: () => ({
-    id: globalIdField('Ship'),
-    name: {
+var GraphQLTodo = new GraphQLObjectType({
+  name: 'Todo',
+  fields: {
+    id: globalIdField('Todo'),
+    text: {
       type: GraphQLString,
-      description: 'The name of the ship.',
+      resolve: (obj) => obj.text,
     },
-  }),
-  interfaces: [nodeInterface]
-});
-
-/**
- * We define a connection between a faction and its ships.
- *
- * connectionType implements the following type system shorthand:
- *   type ShipConnection {
- *     edges: [ShipEdge]
- *     pageInfo: PageInfo!
- *   }
- *
- * connectionType has an edges field - a list of edgeTypes that implement the
- * following type system shorthand:
- *   type ShipEdge {
- *     cursor: String!
- *     node: Ship
- *   }
- */
-var {connectionType: shipConnection} =
-  connectionDefinitions({name: 'Ship', nodeType: shipType});
-
-/**
- * We define our faction type, which implements the node interface.
- *
- * This implements the following type system shorthand:
- *   type Faction : Node {
- *     id: String!
- *     name: String
- *     ships: ShipConnection
- *   }
- */
-var factionType = new GraphQLObjectType({
-  name: 'Faction',
-  description: 'A faction in the Star Wars saga',
-  fields: () => ({
-    id: globalIdField('Faction'),
-    name: {
-      type: GraphQLString,
-      description: 'The name of the faction.',
-    },
-    ships: {
-      type: shipConnection,
-      description: 'The ships used by the faction.',
-      args: connectionArgs,
-      resolve: (faction, args) => connectionFromArray(
-        faction.ships.map((id) => getShip(id)),
-        args
-      ),
+    complete: {
+      type: GraphQLBoolean,
+      resolve: (obj) => obj.complete,
     }
-  }),
+  },
   interfaces: [nodeInterface]
 });
 
-/**
- * This is the type that will be the root of our query,
- * and the entry point into our schema.
- *
- * This implements the following type system shorthand:
- *   type Query {
- *     factions(names: [FactionName]): [Faction]
- *     node(id: String!): Node
- *   }
- */
-var queryType = new GraphQLObjectType({
-  name: 'Query',
-  fields: () => ({
-    factions: {
-      type: new GraphQLList(factionType),
+var {
+  connectionType: TodosConnection,
+  edgeType: GraphQLTodoEdge,
+} = connectionDefinitions({
+  name: 'Todo',
+  nodeType: GraphQLTodo,
+});
+
+var GraphQLUser = new GraphQLObjectType({
+  name: 'User',
+  fields: {
+    id: globalIdField('User'),
+    todos: {
+      type: TodosConnection,
       args: {
-        names: {
-          type: new GraphQLList(GraphQLString),
+        status: {
+          type: GraphQLString,
+          defaultValue: 'any',
         },
+        ...connectionArgs,
       },
-      resolve: (root, {names}) => getFactions(names),
+      resolve: (obj, {status, ...args}) =>
+        connectionFromArray(getTodos(status), args),
+    },
+    totalCount: {
+      type: GraphQLInt,
+      resolve: () => getTodos().length
+    },
+    completedCount: {
+      type: GraphQLInt,
+      resolve: () => getTodos('completed').length
+    },
+  },
+  interfaces: [nodeInterface]
+});
+
+var Root = new GraphQLObjectType({
+  name: 'Root',
+  fields: {
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer()
     },
     node: nodeField
-  })
+  },
 });
 
-/**
- * This will return a GraphQLFieldConfig for our ship mutation.
- *
- * It creates these two types implicitly:
- *   input IntroduceShipInput {
- *     clientMutationId: string!
- *     shipName: string!
- *     factionId: ID!
- *   }
- *
- *   input IntroduceShipPayload {
- *     clientMutationId: string!
- *     ship: Ship
- *     faction: Faction
- *   }
- */
-var shipMutation = mutationWithClientMutationId({
-  name: 'IntroduceShip',
+var GraphQLAddTodoMutation = mutationWithClientMutationId({
+  name: 'AddTodo',
   inputFields: {
-    shipName: {
-      type: new GraphQLNonNull(GraphQLString)
-    },
-    factionId: {
-      type: new GraphQLNonNull(GraphQLID)
-    }
+    text: { type: new GraphQLNonNull(GraphQLString) }
   },
   outputFields: {
-    ship: {
-      type: shipType,
-      resolve: (payload) => getShip(payload.shipId)
+    todoEdge: {
+      type: GraphQLTodoEdge,
+      resolve: ({localTodoId}) => {
+        var todo = getTodo(localTodoId);
+        return {
+          cursor: cursorForObjectInConnection(getTodos(), todo),
+          node: todo,
+        };
+      }
     },
-    faction: {
-      type: factionType,
-      resolve: (payload) => getFaction(payload.factionId)
-    }
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer(),
+    },
   },
-  mutateAndGetPayload: ({shipName, factionId}) => {
-    var newShip = createShip(shipName, factionId);
-    return {
-      shipId: newShip.id,
-      factionId: factionId,
-    };
+  mutateAndGetPayload: ({text}) => {
+    var localTodoId = addTodo(text);
+    return {localTodoId};
   }
 });
 
-/**
- * This is the type that will be the root of our mutations,
- * and the entry point into performing writes in our schema.
- *
- * This implements the following type system shorthand:
- *   type Mutation {
- *     introduceShip(input IntroduceShipInput!): IntroduceShipPayload
- *   }
- */
-var mutationType = new GraphQLObjectType({
-  name: 'Mutation',
-  fields: () => ({
-    introduceShip: shipMutation
-  })
+var GraphQLChangeTodoStatusMutation = mutationWithClientMutationId({
+  name: 'ChangeTodoStatus',
+  inputFields: {
+    complete: { type: new GraphQLNonNull(GraphQLBoolean) },
+    id: { type: new GraphQLNonNull(GraphQLID) },
+  },
+  outputFields: {
+    todo: {
+      type: GraphQLTodo,
+      resolve: ({localTodoId}) => getTodo(localTodoId),
+    },
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer(),
+    },
+  },
+  mutateAndGetPayload: ({id, complete}) => {
+    var localTodoId = fromGlobalId(id).id;
+    changeTodoStatus(localTodoId, complete);
+    return {localTodoId};
+  },
 });
 
-/**
- * Finally, we construct our schema (whose starting query type is the query
- * type we defined above) and export it.
- */
+var GraphQLMarkAllTodosMutation = mutationWithClientMutationId({
+  name: 'MarkAllTodos',
+  inputFields: {
+    complete: { type: new GraphQLNonNull(GraphQLBoolean) },
+  },
+  outputFields: {
+    changedTodos: {
+      type: new GraphQLList(GraphQLTodo),
+      resolve: ({changedTodoLocalIds}) => changedTodoLocalIds.map(getTodo),
+    },
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer(),
+    },
+  },
+  mutateAndGetPayload: ({complete}) => {
+    var changedTodoLocalIds = markAllTodos(complete);
+    return {changedTodoLocalIds};
+  }
+});
+
+// TODO: Support plural deletes
+var GraphQLRemoveCompletedTodosMutation = mutationWithClientMutationId({
+  name: 'RemoveCompletedTodos',
+  outputFields: {
+    deletedTodoIds: {
+      type: new GraphQLList(GraphQLString),
+      resolve: ({deletedTodoIds}) => deletedTodoIds,
+    },
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer(),
+    },
+  },
+  mutateAndGetPayload: () => {
+    var deletedTodoLocalIds = removeCompletedTodos();
+    var deletedTodoIds = deletedTodoLocalIds.map(toGlobalId.bind(null, 'Todo'));
+    return {deletedTodoIds};
+  }
+});
+
+var GraphQLRemoveTodoMutation = mutationWithClientMutationId({
+  name: 'RemoveTodo',
+  inputFields: {
+    id: { type: new GraphQLNonNull(GraphQLID) },
+  },
+  outputFields: {
+    deletedTodoId: {
+      type: GraphQLID,
+      resolve: ({id}) => id,
+    },
+    viewer: {
+      type: GraphQLUser,
+      resolve: () => getViewer(),
+    },
+  },
+  mutateAndGetPayload: ({id}) => {
+    var localTodoId = fromGlobalId(id).id;
+    removeTodo(localTodoId);
+    return {id};
+  }
+});
+
+var GraphQLRenameTodoMutation = mutationWithClientMutationId({
+  name: 'RenameTodo',
+  inputFields: {
+    id: { type: new GraphQLNonNull(GraphQLID) },
+    text: { type: new GraphQLNonNull(GraphQLString) },
+  },
+  outputFields: {
+    todo: {
+      type: GraphQLTodo,
+      resolve: ({localTodoId}) => getTodo(localTodoId),
+    }
+  },
+  mutateAndGetPayload: ({id, text}) => {
+    var localTodoId = fromGlobalId(id).id;
+    renameTodo(localTodoId, text);
+    return {localTodoId};
+  },
+});
+
+var Mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    addTodo: GraphQLAddTodoMutation,
+    changeTodoStatus: GraphQLChangeTodoStatusMutation,
+    markAllTodos: GraphQLMarkAllTodosMutation,
+    removeCompletedTodos: GraphQLRemoveCompletedTodosMutation,
+    removeTodo: GraphQLRemoveTodoMutation,
+    renameTodo: GraphQLRenameTodoMutation,
+  },
+});
+
 export var schema = new GraphQLSchema({
-  query: queryType,
-  mutation: mutationType
+  query: Root,
+  mutation: Mutation
 });
