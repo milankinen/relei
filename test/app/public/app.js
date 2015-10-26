@@ -17,7 +17,7 @@ const fragment =
   }`
 
 const viewersTodos =
-  query(RelayQL`query ViewerTodos { viewer }`, {}, {})
+  query(RelayQL`query ViewerTodos { viewer }`, {})
 
 const addTodo = mutate({
   mutation: RelayQL`mutation { addTodo }`,
