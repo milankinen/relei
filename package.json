@@ -9,7 +9,9 @@
   },
   "keywords": [
     "react",
-    "relay"
+    "relay",
+    "graphql",
+    "client"
   ],
   "author": "Matti Lankinen <m.lankinen@iki.fi> (https://github.com/milankinen)",
   "license": "MIT",
