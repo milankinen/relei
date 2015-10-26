@@ -17,10 +17,11 @@
     "prepublish": "npm run dist",
     "dist": "babel src --source-maps inline --out-dir lib",
     "test": "npm run lint && npm run smoke-tests",
-    "smoke-tests": "babel-tape-runner test/smokeTests.js ; EXIT_VALUE=$? ; killall node ; exit $EXIT_VALUE",
     "lint": "eslint src test",
+    "smoke-tests": "npm run create-test-bundle && npm run start-test-server && sleep 2 && npm run run-tests",
     "create-test-bundle": "cd test/server && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",
-    "start-test-server": "babel-node test/server/index.js"
+    "start-test-server": "babel-node test/server/index.js &",
+    "run-tests": "phantomjs test/smokeTests.js ; EXIT_VALUE=$? ; killall node ; exit $EXIT_VALUE"
   },
   "dependencies": {
     "react-relay": "^0.4.0"
@@ -37,14 +38,12 @@
     "eslint": "1.7.3",
     "express": "^4.13.3",
     "express-graphql": "^0.4.0",
-    "faucet": "0.0.1",
+    "fbjs": "^0.4.0",
     "graphql": "^0.4.9",
     "graphql-relay": "^0.3.4",
+    "phantomjs": "^1.9.18",
     "react": "^0.14.0",
     "react-dom": "^0.14.0",
-    "react-relay": "^0.4.0",
-    "shelljs": "^0.5.3",
-    "tape": "4.2.2",
-    "zombie": "^4.1.0"
+    "react-relay": "^0.4.0"
   }
 }
