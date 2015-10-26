@@ -16,7 +16,7 @@
   "scripts": {
     "prepublish": "npm run dist",
     "dist": "babel src --source-maps inline --out-dir lib",
-    "test": "npm run lint && npm run test:all",
+    "test": "npm run dist && npm run lint && npm run test:all",
     "lint": "eslint src test",
     "test:all": "npm run test:bundle && npm run test:server && sleep 4 && npm run test:run",
     "test:bundle": "cd test/app && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",

@@ -1,4 +1,4 @@
-import {RelayQL, setEndpoint, query, observe, mutate} from "../../../src/main"
+import {RelayQL, setEndpoint, query, observe, mutate} from "../../../index"
 
 setEndpoint("/api/graphql")
 
