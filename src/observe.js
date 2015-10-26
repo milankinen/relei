@@ -13,8 +13,9 @@ export default curry((q, opts, fragment, onValue) => {
   const {root, base: {name}, variables} = q(fragment)
   const options = opts || {}
 
-  let resolver = null,
-    request  = null
+  let resolver = null
+  let request  = null
+  let previous
 
   request = options.forceFetch === true ?
     RelayStore.forceFetch({[name]: root}, handleStatusChange) :
@@ -53,7 +54,10 @@ export default curry((q, opts, fragment, onValue) => {
       const handleUpdate = () => {
         if (resolver) {
           const val = resolver.resolve(graphqlFP)
-          onValue(val)
+          if (previous !== val) {
+            previous = val
+            onValue(val)
+          }
         }
       }
 
