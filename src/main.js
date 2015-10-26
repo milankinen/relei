@@ -135,7 +135,8 @@ class ReleiMutation extends RelayMutation {
     return this.releiOpts.fatQuery
   }
   getConfigs() {
-    return this.releiOpts.configs(this.releiOpts.ctx)
+    const {ctx, variables} = this.releiOpts
+    return this.releiOpts.configs(ctx, variables)
   }
 }
 
@@ -144,7 +145,8 @@ class ReleiOptimisticMutation extends ReleiMutation {
     super(mutation, opts)
   }
   getOptimisticResponse() {
-    return this.releiOpts.optimisticResponse
+    const {ctx, variables} = this.releiOpts
+    return this.releiOpts.optimisticResponse(ctx, variables)
   }
 }
 
