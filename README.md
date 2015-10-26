@@ -3,6 +3,7 @@
 Simple, lightweight and reactive Relay client
 
 [![npm version](https://badge.fury.io/js/relei.svg)](http://badge.fury.io/js/relei)
+[![Build Status](https://travis-ci.org/milankinen/relei.svg)](https://travis-ci.org/milankinen/relei)
 
 **OBS! OBS! This is project is far from stable, thus it's not recommended for production usage**
 
