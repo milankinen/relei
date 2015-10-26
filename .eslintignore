@@ -1,4 +1,4 @@
 **/bundle.js
-test/server/data/*
-test/server/public/shim.js
+test/app/data/*
+test/app/public/shim.js
 test/promise.js
