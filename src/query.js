@@ -7,6 +7,10 @@ import curry from "./util/curry"
 
 export default curry((q, variables) => {
   return (fragment) => {
+    if (!q.name) {
+      throw new Error("Missing query name! Relei supports only named queries")
+    }
+
     const baseQuery =
       new GraphQL.Query(
         q.fieldName,
