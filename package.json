@@ -18,7 +18,7 @@
     "dist": "babel src --source-maps inline --out-dir lib",
     "test": "npm run lint && npm run test:all",
     "lint": "eslint src test",
-    "test:all": "npm run test:bundle && npm run test:server && sleep 2 && npm run test:run",
+    "test:all": "npm run test:bundle && npm run test:server && sleep 4 && npm run test:run",
     "test:bundle": "cd test/app && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",
     "test:server": "babel-node test/app/server.js &",
     "test:run": "phantomjs test/smokeTests.js ; EXIT_VALUE=$? ; killall node ; exit $EXIT_VALUE"
