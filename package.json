@@ -16,12 +16,12 @@
   "scripts": {
     "prepublish": "npm run dist",
     "dist": "babel src --source-maps inline --out-dir lib",
-    "test": "npm run lint && npm run smoke-tests",
+    "test": "npm run lint && npm run test:all",
     "lint": "eslint src test",
-    "smoke-tests": "npm run create-test-bundle && npm run start-test-server && sleep 2 && npm run run-tests",
-    "create-test-bundle": "cd test/server && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",
-    "start-test-server": "babel-node test/server/index.js &",
-    "run-tests": "phantomjs test/smokeTests.js ; EXIT_VALUE=$? ; killall node ; exit $EXIT_VALUE"
+    "test:all": "npm run test:bundle && npm run test:server && sleep 2 && npm run test:run",
+    "test:bundle": "cd test/app && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",
+    "test:server": "babel-node test/app/server.js &",
+    "test:run": "phantomjs test/smokeTests.js ; EXIT_VALUE=$? ; killall node ; exit $EXIT_VALUE"
   },
   "dependencies": {
     "react-relay": "^0.4.0"
