@@ -9,15 +9,17 @@
   },
   "keywords": [
     "react",
-    "relay"
+    "relay",
+    "graphql",
+    "client"
   ],
   "author": "Matti Lankinen <m.lankinen@iki.fi> (https://github.com/milankinen)",
   "license": "MIT",
   "scripts": {
     "prepublish": "npm run dist",
     "dist": "babel src --source-maps inline --out-dir lib",
-    "test": "npm run lint && npm run test:all",
-    "lint": "eslint src test",
+    "test": "npm run dist && npm run lint && npm run test:all",
+    "lint": "eslint src test examples/*/src",
     "test:all": "npm run test:bundle && npm run test:server && sleep 4 && npm run test:run",
     "test:bundle": "cd test/app && browserify -t [ babelify --plugins './babel-ql' ] public/app.js > public/bundle.js",
     "test:server": "babel-node test/app/server.js &",
@@ -36,9 +38,9 @@
     "bluebird": "2.10.2",
     "browserify": "11.2.0",
     "eslint": "1.7.3",
+    "eslint-plugin-react": "3.6.3",
     "express": "4.13.3",
     "express-graphql": "0.4.0",
-    "fbjs": "0.4.0",
     "graphql": "0.4.9",
     "graphql-relay": "0.3.4",
     "phantomjs": "1.9.18",
