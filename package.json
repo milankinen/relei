@@ -1,6 +1,6 @@
 {
   "name": "relei",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple Relay client",
   "main": "index.js",
   "repository": {
