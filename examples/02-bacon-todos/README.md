@@ -1,11 +1,11 @@
 # Relei with Bacon.js
 
-The full potential of `relei` is acquired when it's combined with some
+The full potential of `relei` is acquired when combining it with some
 [Functional Reactive Programming](https://en.wikipedia.org/wiki/Functional_reactive_programming)
-library like [Bacon.js](https://github.com/baconjs/bacon.js) (although all
+library like [Bacon.js](https://github.com/baconjs/bacon.js) (although some
 people don't consider Bacon.js as FRP).
 
-The most important file is `src/observeAsStream.js` which transforms the
+The most central file is `src/observeAsStream.js` which transforms the
 `observe` function into event stream. This enables very powerful tools for
 Relay query and fragment management.
 
@@ -43,10 +43,8 @@ const todoItemsP =
 ```
 
 All subscribing and unsubscribing logic is managed by event streams and only
-thing you need to worry is the data you need.
+thing you have to worry is the data you need.
 
-And note that no extra `RelayContainer`, `RootContainer` or `Route` declarations
-are needed!
 
 ## Usage
 
